@@ -9,9 +9,11 @@ from scrapy import Item, Field
 
 
 class UserItem(Item):
+    username =Field             #用户名
     nickname =Field()           #昵称
     sex =Field()                #性别
     logintimes =Field()         #登陆次数
+    topicnum =Field()           #发帖数
     lifepower =Field()          #生命力
     score =Field()              #积分
     grade =Field()              #等级
@@ -23,12 +25,14 @@ class TopicItem(Item):
     classid =Field()            #外键，关联分类表的分类id
     name =Field()               #话题的名字
 
+
 class CommentItem(Item):
     topicid =Field()            #外键，关联话题表的话题id
     userid =Field()             #外键，关联用户表的用户id
     content =Field()            #评论的内容
     time =Field()               #评论的时间（最后修改时间）
-    floor =Field()              #第几层楼
+    floornum =Field()           #第几层楼
+    user =Field()               #冗余的user，先存下来便于观察
 
 class ClassificationItem(Item):
     name =Field()               #类别的名字
