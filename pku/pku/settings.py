@@ -88,3 +88,9 @@ DOWNLOAD_DELAY = 1.5
 #HTTPCACHE_DIR = 'httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+# start MySQL database configure setting
+MYSQL_HOST = 'localhost'
+MYSQL_DBNAME = 'pku'
+MYSQL_USER = 'root'
+MYSQL_PASSWD = ''
+# end of MySQL database configure setting
