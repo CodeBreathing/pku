@@ -3,6 +3,7 @@ import hashlib
 
 
 # 产生MD5码
+
 def md5_code(src):
     if not src:
         raise ValueError('参数不能为空!!')

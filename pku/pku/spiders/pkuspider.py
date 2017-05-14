@@ -82,17 +82,22 @@ class newsmthSpider(CrawlSpider):
         #     yield Request(articleurl, callback=self.parse_content)
 
         #抓取完本页后处理分页
-        nextpage=selector.xpath('//a/@href[contains(.,"mode=topic")]').extract()
-        for nextpagelist in nextpage:
-            #过滤掉不需要的链接
-            if nextpagelist.find("v2/thread.php")==-1:
-                nextpageurl = newrooturl + nextpagelist
-                yield Request(nextpageurl, callback=self.parse_boardpage)
+        try:
+            nextpage=selector.xpath('//a/@href[contains(.,"mode=topic")]').extract()
+            for nextpagelist in nextpage:
+                #过滤掉不需要的链接
+                if nextpagelist.find("v2/thread.php")==-1:
+                    nextpageurl = newrooturl + nextpagelist
+                    yield Request(nextpageurl, callback=self.parse_boardpage)
+        except:
+            #如果没有新的页面了，pass，抓下一个topic
+            pass
 
     #第四层：抓取一个topic下的所有内容，包括评论、分类、作者信息（完全的作者信息交给下一层处理）
     def parse_content(self, response):
         commentitem=CommentItem()
         rooturl ="https://bbs.pku.edu.cn/v2/"
+        contentrooturl ="https://bbs.pku.edu.cn/v2/post-read.php"
         selector =Selector(response)
         # topicname =selector.xpath("//h3/text()").extract()[0]
         # topicitem['topicname'] = topicname
@@ -133,7 +138,17 @@ class newsmthSpider(CrawlSpider):
             commentitem['time'] =time
             commentitem['topicid']=topicid
             yield commentitem
-
+        #具体内容翻页
+        try:
+            nextpage = selector.xpath('//a/@href[contains(.,"page=")]').extract()
+            for nextpagelist in nextpage:
+                # 过滤掉不需要的链接
+                if nextpagelist.find("v2/post-read.php") == -1:
+                    nextpageurl = contentrooturl + nextpagelist
+                    #print nextpageurl
+                    yield Request(nextpageurl, callback=self.parse_content)
+        except:
+            pass
 
     #第五层,处理一个用户的所有信息，返回给UserItem
     def parse_user(self, response):
@@ -144,7 +159,7 @@ class newsmthSpider(CrawlSpider):
             nickname =selector.xpath("//span[@class='nickname']/text()").extract()[0]
         except:
             #比如https://bbs.pku.edu.cn/v2/user.php?uid=85646
-            nickname =selector.xpath("//div[@class='nick']/span[2]/text()").extract()[0]
+            nickname =selector.xpath("//div[@class='nick']/p/span[2]/text()").extract()[0]
         #下面要注意，打印出来的文本列表里面第一个是回车符，第二个才含着需要的内容
         sex =selector.xpath("//div[@class='profile']/div[1]/div[2]/text()").extract()[1].replace(" ","").replace("\n","")
         logintimes =selector.xpath("//div[@class='profile']/div[2]/div[1]/text()").extract()[1].replace(" ","").replace("\n","")
