@@ -25,6 +25,7 @@ class TopicItem(Item):
     userid =Field()             #同用户表的用户id
     classid =Field()            #关联分类表的分类id
     topicname =Field()          #话题的名字
+    replynum =Field()           #回复数
 
 
 class CommentItem(Item):

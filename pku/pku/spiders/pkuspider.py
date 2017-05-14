@@ -35,15 +35,52 @@ class newsmthSpider(CrawlSpider):
     #第三层：在板块中抓取标题,并处理翻页，在此页抓取topic的信息
     def parse_boardpage(self, response):
         # print response.url
+        topicitem=TopicItem()
+        classificationitem=ClassificationItem()
         rooturl = "https://bbs.pku.edu.cn/v2/"
         newrooturl="https://bbs.pku.edu.cn/v2/thread.php"
         selector = Selector(response)
 
+        #获取本话题所在的版面及上级版面信息，存到classification表
+        inthread =selector.xpath("//div[@class='breadcrumb-trail']/a[4]/text()").extract()[0]
+        inboard =selector.xpath("//div[@class='breadcrumb-trail']/a[3]/text()").extract()[0]
+        classificationitem['inboard']=inboard
+        classificationitem['inthread']=inthread
+        #计算classid
+        inboardurl = selector.xpath("//div[@class='breadcrumb-trail']/a[3]/@href").extract()[0]
+        inthreadurl = selector.xpath("//div[@class='breadcrumb-trail']/a[4]/@href").extract()[0]
+        #正则提取board的bid和thread的bid
+        boardbid = re.search(r'bid=(\d*)', inboardurl, re.M | re.I)
+        threadbid = re.search(r'bid=(\d*)', inthreadurl, re.M | re.I)
+        if boardbid and threadbid:
+            classid = str(boardbid.group(1)) + "&" + str(threadbid.group(1))
+            classificationitem['classid']=classid
+        else:
+           print "cannot get the classbid!!"
+        yield classificationitem
 
-        article=selector.xpath("//div[@class='list-item-topic list-item']/a/@href").extract()
-        for articlelist in article:
-            articleurl =rooturl +articlelist
+        articleinfo=selector.xpath("//div[@class='list-item-topic list-item']")
+        for infolist in articleinfo:
+            article =infolist.xpath("a/@href").extract()[0]
+            topicidurl=re.search(r'threadid=(\d*)', article, re.M | re.I)
+            topicid = topicidurl.group(1)
+            topicname =infolist.xpath("div[3]/div/text()").extract()[0]
+            userid =infolist.xpath("div[5]/div[1]/text()").extract()[0]
+            replynum =infolist.xpath("div[6]/text()").extract()[0]
+            topicitem['topicid']=topicid
+            topicitem['topicname'] =topicname
+            topicitem['userid'] =userid
+            topicitem['replynum'] =replynum
+            topicitem['classid'] = classid
+            yield topicitem
+            articleurl = rooturl + article
             yield Request(articleurl, callback=self.parse_content)
+        #另一种策略，存储完本topic列表信息后，重新抓每个链接并进去每个topic内容，考虑到scrapy抓取url自动去重，不采用
+        #article=selector.xpath("//div[@class='list-item-topic list-item']/a/@href").extract()
+        # for articlelist in article:
+        #     articleurl =rooturl +articlelist
+        #     yield Request(articleurl, callback=self.parse_content)
+
         #抓取完本页后处理分页
         nextpage=selector.xpath('//a/@href[contains(.,"mode=topic")]').extract()
         for nextpagelist in nextpage:
@@ -54,48 +91,22 @@ class newsmthSpider(CrawlSpider):
 
     #第四层：抓取一个topic下的所有内容，包括评论、分类、作者信息（完全的作者信息交给下一层处理）
     def parse_content(self, response):
-        topicitem=TopicItem()
         commentitem=CommentItem()
-        classificationitem=ClassificationItem()
         rooturl ="https://bbs.pku.edu.cn/v2/"
         selector =Selector(response)
         # topicname =selector.xpath("//h3/text()").extract()[0]
         # topicitem['topicname'] = topicname
 
         #在传入本函数的链接中获取本话题的id,存入topic表和comment表
-        topicid = re.search(r'threadid=(\d*)', str(response.url), re.M | re.I)
-        if topicid:
+        topicidurl = re.search(r'threadid=(\d*)', str(response.url), re.M | re.I)
+        if topicidurl:
             #print topicid.group()
             #print topicid.group(1)
-            topicitem['topicid'] =topicid.group(1)
+            topicid =topicidurl.group(1)
             #print matchObj.group(2)
         else:
            print "cannot get the topicid!!"
 
-
-
-        #获取本话题所在的版面
-        inthread =selector.xpath("//div[@class='breadcrumb-trail']/a[4]/text()").extract()[0]
-        inboard =selector.xpath("//div[@class='breadcrumb-trail']/a[3]/text()").extract()[0]
-        classificationitem['inboard']=inboard
-        classificationitem['inthread']=inthread
-        #计算classid
-        inboardurl = selector.xpath("//div[@class='breadcrumb-trail']/a[3]/@href").extract()[0]
-        inthreadurl = selector.xpath("//div[@class='breadcrumb-trail']/a[4]/@href").extract()[0]
-        print inboardurl
-        print inthreadurl
-        boardbid = re.search(r'bid=(\d*)', inboardurl, re.M | re.I)
-        threadbid = re.search(r'bid=(\d*)', inthreadurl, re.M | re.I)
-        if boardbid and threadbid:
-            classid = str(boardbid.group(1)) + "&" + str(threadbid.group(1))
-            classificationitem['classid']=classid
-            topicitem['classid']=classid
-            #print classid
-        else:
-           print "cannot get the classbid!!"
-
-        yield topicitem
-        yield classificationitem
         #获取用户信息的链接
         user = selector.xpath("//div[@class='post-owner']/a[1]/@href").extract()
         for userlist in user:
