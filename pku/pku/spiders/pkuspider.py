@@ -42,6 +42,7 @@ class newsmthSpider(CrawlSpider):
         selector = Selector(response)
 
         #获取本话题所在的版面及上级版面信息，存到classification表
+
         inthread =selector.xpath("//div[@class='breadcrumb-trail']/a[4]/text()").extract()[0]
         inboard =selector.xpath("//div[@class='breadcrumb-trail']/a[3]/text()").extract()[0]
         classificationitem['inboard']=inboard
