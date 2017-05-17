@@ -35,7 +35,7 @@ class newsmthSpider(CrawlSpider):
     #第三层：在板块中抓取标题,并处理翻页，在此页抓取topic的信息
     def parse_boardpage(self, response):
         # print response.url
-        topicitem=TopicItem()
+
         classificationitem=ClassificationItem()
         rooturl = "https://bbs.pku.edu.cn/v2/"
         newrooturl="https://bbs.pku.edu.cn/v2/thread.php"
@@ -62,17 +62,19 @@ class newsmthSpider(CrawlSpider):
 
         articleinfo=selector.xpath("//div[@class='list-item-topic list-item']")
         for infolist in articleinfo:
+            topicitem = TopicItem()
             article =infolist.xpath("a/@href").extract()[0]
             topicidurl=re.search(r'threadid=(\d*)', article, re.M | re.I)
             topicid = topicidurl.group(1)
             topicname =infolist.xpath("div[3]/div/text()").extract()[0]
             userid =infolist.xpath("div[5]/div[1]/text()").extract()[0]
             replynum =infolist.xpath("div[6]/text()").extract()[0]
+
             topicitem['topicid']=topicid
-            topicitem['topicname'] =topicname
-            topicitem['userid'] =userid
-            topicitem['replynum'] =replynum
-            topicitem['classid'] = classid
+            topicitem['topicname']=topicname
+            topicitem['userid']=userid
+            topicitem['replynum']=replynum
+            topicitem['classid']=classid
             yield topicitem
             articleurl = rooturl + article
             yield Request(articleurl, callback=self.parse_content)
@@ -96,7 +98,7 @@ class newsmthSpider(CrawlSpider):
 
     #第四层：抓取一个topic下的所有内容，包括评论、分类、作者信息（完全的作者信息交给下一层处理）
     def parse_content(self, response):
-        commentitem=CommentItem()
+
         rooturl ="https://bbs.pku.edu.cn/v2/"
         contentrooturl ="https://bbs.pku.edu.cn/v2/post-read.php"
         selector =Selector(response)
@@ -122,6 +124,7 @@ class newsmthSpider(CrawlSpider):
         #抓取一个topic的每层楼的内容
         floor =selector.xpath("//div[@class='post-card']")
         for floorlist in floor:
+            commentitem = CommentItem()
             commentid =floorlist.xpath("div[1]/@id").extract()[0]
             floornum =floorlist.xpath("div[3]/span/text()").extract()[0]
             contentlist = floorlist.xpath("div[3]/div[1]/div[1]/p[not(@class)]/text()").extract()
@@ -132,12 +135,12 @@ class newsmthSpider(CrawlSpider):
             for p in contentlist:
                 content =content+p
             #print content
-            commentitem['userid'] =userid
-            commentitem['commentid'] =commentid
-            commentitem['floornum'] =floornum
-            commentitem['content'] =content
-            commentitem['time'] =time
-            commentitem['topicid']=topicid
+            commentitem['userid'] = userid
+            commentitem['commentid'] = commentid
+            commentitem['floornum'] = floornum
+            commentitem['content'] = content
+            commentitem['time'] = time
+            commentitem['topicid'] = topicid
             yield commentitem
         #具体内容翻页
         try:

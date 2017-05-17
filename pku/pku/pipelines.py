@@ -62,11 +62,11 @@ class MySQLStorePkuPipeline(object):
             usermd5id = self._get_usermd5id(item)
             # print usermd5id
             #now = datetime.utcnow().replace(microsecond=0).isoformat(' ')
-            conn.execute("select 1 from user where userid = %s", (usermd5id))
+            conn.execute("select 1 from user where userid = %s", usermd5id)
             userret = conn.fetchone()
 
             if userret:
-                conn.execute("update user set nickname = %s, sex = %s, logintimes = %s, topicnum = %s,lifepower =%s, score= %S, grade= %s, originalscore =%s, lastlogintime= %s where userid = %s"
+                conn.execute("update user set nickname = %s, sex = %s, logintimes = %s, topicnum = %s,lifepower =%s, score= %s, grade= %s, originalscore =%s, lastlogintime= %s where userid = %s"
                 ,( item['nickname'], item['sex'], item['logintimes'], item['topicnum'], item['lifepower'],item['score'],item['grade'],item['originalscore'],item['lastlogintime'], usermd5id))
                 # print """
                 #    update cnblogsinfo set title = %s, description = %s, link = %s, listUrl = %s, updated = %s where linkmd5id = %s
@@ -81,7 +81,7 @@ class MySQLStorePkuPipeline(object):
             usermd5id = self._get_usermd5id(item)
             topicmd5id = self._get_topicmd5id(item)
             #now = datetime.utcnow().replace(microsecond=0).isoformat(' ')
-            conn.execute("select 1 from topic where topicid = %s", (topicmd5id))
+            conn.execute("select 1 from topic where topicid = %s", topicmd5id)
             topicret = conn.fetchone()
             if topicret:
                 conn.execute("update topic set userid = %s, classid = %s, topicname = %s, replynum = %s where topicid = %s",( usermd5id, item['classid'], item['topicname'], item['replynum'],topicmd5id))
@@ -91,7 +91,7 @@ class MySQLStorePkuPipeline(object):
             usermd5id = self._get_usermd5id(item)
             topicmd5id = self._get_topicmd5id(item)
             commentmd5id =self._get_commentmd5id(item)
-            conn.execute("select 1 from comment where commentid = %s", (commentmd5id))
+            conn.execute("select 1 from comment where commentid = %s", commentmd5id)
             commentret =conn.fetchone()
             if commentret:
                 conn.execute("update comment set topicid = %s, userid = %s, content = %s, time = %s, floornum = %s where commentid = %s",( topicmd5id, usermd5id, item['content'], item['time'],item['floornum'],commentmd5id))
@@ -99,7 +99,7 @@ class MySQLStorePkuPipeline(object):
                 conn.execute("insert into comment(commentid, topicid, userid, content, time, floornum) values( %s, %s, %s, %s, %s, %s)", (commentmd5id, topicmd5id, usermd5id, item['content'],item['time'], item['floornum']))
         elif isinstance(item, ClassificationItem):
             #classid本来就是自己拼接的字符串，不加密
-            conn.execute("select 1 from classification where classid = %s", (item['classid']))
+            conn.execute("select 1 from classification where classid = %s", item['classid'])
             classret =conn.fetchone()
             if classret:
                 conn.execute("update classification set inboard = %s, inthread = %s where classid = %s",( item['inboard'], item['inthread'], item['classid']))
