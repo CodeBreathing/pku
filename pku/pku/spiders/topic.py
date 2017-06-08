@@ -8,7 +8,14 @@ import re
 def get_topic_item(response):
     selector = Selector(response)
     check_value = lambda x: x if x else ''
-
+    # 计算classid
+    inboardurl = selector.xpath("//div[@class='breadcrumb-trail']/a[3]/@href").extract_first()
+    inthreadurl = selector.xpath("//div[@class='breadcrumb-trail']/a[4]/@href").extract_first()
+    # 正则提取board的bid和thread的bid
+    boardbid = re.search(r'bid=(\d*)', inboardurl, re.M | re.I)
+    threadbid = re.search(r'bid=(\d*)', inthreadurl, re.M | re.I)
+    if boardbid and threadbid:
+        classid = str(boardbid.group(1)) + "&" + str(threadbid.group(1))
     articleinfo = selector.xpath("//div[@class='list-item-topic list-item']")
     for infolist in articleinfo:
         topicitem = TopicItem()
